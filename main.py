@@ -36,7 +36,7 @@ def run(cfg):
     
     # wandb
     if cfg.TRAIN.use_wandb:
-        wandb.init(name=cfg.EXP_NAME, project='MemSeg', config=OmegaConf.to_container(cfg))
+        wandb.init(name=cfg.EXP_NAME, project='MemSeg_Pull', config=OmegaConf.to_container(cfg))
 
     # build datasets
     trainset = create_dataset(
@@ -93,9 +93,14 @@ def run(cfg):
         features_only = True
     ).to(device)
     ## freeze weight of layer1,2,3
-    for l in ['layer1','layer2','layer3']:
+    # for l in ['layer1','layer2','layer3']:
+    #     for p in feature_extractor[l].parameters():
+    #         p.requires_grad = False
+    for p in feature_extractor.parameters():
+        p.requires_grad = False
+    for l in ['layer4']:
         for p in feature_extractor[l].parameters():
-            p.requires_grad = False
+            p.requires_grad = True
 
     # build memory bank
     memory_bank = MemoryBank(
@@ -117,6 +122,7 @@ def run(cfg):
     # Set training
     l1_criterion = nn.L1Loss()
     f_criterion = FocalLoss(
+        smooth= cfg.TRAIN.focal_smooth,
         gamma = cfg.TRAIN.focal_gamma, 
         alpha = cfg.TRAIN.focal_alpha
     )
@@ -126,6 +132,7 @@ def run(cfg):
         lr           = cfg.OPTIMIZER.lr, 
         weight_decay = cfg.OPTIMIZER.weight_decay
     )
+
 
     if cfg['SCHEDULER']['use_scheduler']:
         scheduler = CosineAnnealingWarmupRestarts(

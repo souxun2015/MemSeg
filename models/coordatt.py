@@ -39,7 +39,7 @@ class CoordAtt(nn.Module):
         
 
     def forward(self, x):
-        identity = x
+        # identity = x
         
         n,c,h,w = x.size()
         x_h = self.pool_h(x)
@@ -56,6 +56,6 @@ class CoordAtt(nn.Module):
         a_h = self.conv_h(x_h).sigmoid()
         a_w = self.conv_w(x_w).sigmoid()
 
-        out = identity * a_w * a_h
-
+        # out = identity * a_w * a_h
+        out = a_w * a_h
         return out

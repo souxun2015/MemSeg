@@ -2,8 +2,8 @@ EXP_NAME: MemSeg
 SEED: 42
 
 DATASET:
-  datadir: /datasets/MVTec
-  texture_source_dir: /datasets/dtd/images
+  datadir: ../../Dataset/mvtec_anomaly_detection
+  texture_source_dir: ../../Dataset/dtd/images
   anomaly_mask_info: ./anomaly_mask.json
   target: null
   resize:
@@ -34,6 +34,7 @@ TRAIN:
   focal_weight: 0.4
   focal_alpha: null
   focal_gamma: 4
+  focal_smooth: 1e-4
   use_wandb: True
 
 OPTIMIZER:

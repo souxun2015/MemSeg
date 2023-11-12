@@ -45,36 +45,35 @@ class MemoryBank:
 
                         
     def _calc_diff(self, features: List[torch.Tensor]) -> torch.Tensor:
-        # batch size X the number of samples saved in memory
-        diff_bank = torch.zeros(features[0].size(0), self.nb_memory_sample).to(self.device)
-
+        diff_bank_list = []
         # level
         for l, level in enumerate(self.memory_information.keys()):
             # batch
+            # batch size X the number of samples saved in memory
+            diff_bank = torch.zeros(features[0].size(0), self.nb_memory_sample).to(self.device)
             for b_idx, features_b in enumerate(features[l]):
                 # calculate l2 loss
                 diff = F.mse_loss(
                     input     = torch.repeat_interleave(features_b.unsqueeze(0), repeats=self.nb_memory_sample, dim=0), 
                     target    = self.memory_information[level], 
                     reduction ='none'
-                ).mean(dim=[1,2,3])
+                ).sum(dim=[1,2,3])
 
                 # sum loss
-                diff_bank[b_idx] += diff
-                
-        return diff_bank
-        
+                diff_bank[b_idx] = diff
+            diff_bank_list.append(diff_bank)
     
+        return diff_bank_list
+
+
     def select(self, features: List[torch.Tensor]) -> torch.Tensor:
         # calculate difference between features and normal features of memory bank
         diff_bank = self._calc_diff(features=features)
         
         # concatenate features with minimum difference features of memory bank
         for l, level in enumerate(self.memory_information.keys()):
-            
-            selected_features = torch.index_select(self.memory_information[level], dim=0, index=diff_bank.argmin(dim=1))
+            selected_features = torch.index_select(self.memory_information[level], dim=0, index=diff_bank[l].argmin(dim=1))
             diff_features = F.mse_loss(selected_features, features[l], reduction='none')
-            features[l] = torch.cat([features[l], diff_features], dim=1)
+            features[l] = torch.cat([features[l], torch.sqrt(diff_features)], dim=1)
             
         return features
-    
